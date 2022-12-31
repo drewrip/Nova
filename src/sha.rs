@@ -12,25 +12,11 @@ use bitvec::{
   view::BitView,
   prelude::Lsb0,
 };
-use hex;
 use core::marker::PhantomData;
-use std::ops::Deref;
 use ff::{
-  derive::byteorder::{ByteOrder, LittleEndian},
-  Field, PrimeField, PrimeFieldBits,
+  PrimeField, PrimeFieldBits,
 };
-use generic_array::typenum::U24;
 use sha2::{Digest, Sha256};
-use neptune::{
-  circuit2::Elt,
-  poseidon::PoseidonConstants,
-  sponge::{
-    api::{IOPattern, SpongeAPI, SpongeOp},
-    circuit::SpongeCircuit,
-    vanilla::{Mode::Simplex, Sponge, SpongeTrait},
-  },
-  Strength,
-};
 
 /// All Poseidon Constants that are used in Nova
 #[derive(Clone)]
@@ -99,37 +85,11 @@ where
       }
     ).collect::<Vec<Vec<u8>>>().concat();
 
-    let debug_str: Vec<String> = data.view_bits::<Lsb0>()
-      .iter()
-      .map(|b| {
-        match *b {
-          true => "1".to_string(),
-          false => "0".to_string(),
-        }
-      })
-      .collect::<Vec<String>>()
-      .chunks(256)
-      .map(|c| c.to_vec())
-      .collect::<Vec<Vec<String>>>()
-      .iter()
-      .map(|s| s.concat())
-      .collect::<Vec<String>>();
-
-    println!("outside bits:");
-    for s in debug_str {
-      println!("{}", s);
-    }
-    println!("outside in bytes:");
-    println!("{}", hex::encode(data.clone()));
-
     hasher.update(data);
 
     let hash_output = hasher.finalize();
     let hash: &[u8] = hash_output.as_ref();
     assert_eq!(hash.len(), 32);
-
-    println!("outside hash bytes:");
-    println!("{}", hex::encode(hash.clone()));
     
     // Only return `num_bits`
     let bits = hash.view_bits::<Lsb0>();
@@ -198,9 +158,7 @@ where
       .iter()
       .enumerate()
       .map(|(i, n)| {
-        println!("starting to bits le strict");
         let alloc_scalar_bits = n.to_bits_le_strict(ns.namespace(|| format!("alloc scalar as bits {}", i)));
-        println!("finished to bits le strict");
         match alloc_scalar_bits {
           Ok(v) => {
             let pad_bits: Vec<Boolean> = (0..(256-v.len()))
@@ -232,33 +190,8 @@ where
       .cloned()
       .collect();
 
-    // let debug_str: Vec<String> = data
-    //   .iter()
-    //   .map(|b| {
-    //     match b {
-    //       Boolean::Is(t) => {
-    //         (t.get_value().unwrap() as u8).to_string()
-    //       },
-    //       _ => "?".to_string(),
-    //     }
-    //   })
-    //   .collect::<Vec<String>>()
-    //   .chunks(256)
-    //   .map(|c| c.to_vec())
-    //   .collect::<Vec<Vec<String>>>()
-    //   .iter()
-    //   .map(|s| s.concat())
-    //   .collect::<Vec<String>>();
-  
-    
-    // println!("Circuit bits:");
-    // for s in debug_str {
-    //   println!("{}", s);
-    // }
-
-    println!("starting sha256 hash");
     let hash = sha256(ns.namespace(|| "sha256(x)"), &data)?;
-    println!("finished sha256 hash");
+
     // return the hash as a vector of bits, truncated
     Ok(
       hash
