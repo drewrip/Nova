@@ -85,11 +85,14 @@ where
       }
     ).collect::<Vec<Vec<u8>>>().concat();
 
+    println!("state: {:?}", hex::encode(data.clone()));
     hasher.update(data);
 
     let hash_output = hasher.finalize();
     let hash: &[u8] = hash_output.as_ref();
     assert_eq!(hash.len(), 32);
+
+    println!("hash: {:?}", hex::encode(hash.clone()));
     
     // Only return `num_bits`
     let bits = hash.view_bits::<Lsb0>();
@@ -218,6 +221,7 @@ mod tests {
   use crate::{
     bellperson::solver::SatisfyingAssignment, constants::NUM_CHALLENGE_BITS,
     gadgets::utils::le_bits_to_num,
+    traits::*,
   };
   use ff::Field;
   use rand::rngs::OsRng;
@@ -227,12 +231,13 @@ mod tests {
     // Check that the number computed inside the circuit is equal to the number computed outside the circuit
     let mut csprng: OsRng = OsRng;
     let constants = Sha256ConstantsCircuit::new();
-    let num_absorbs = 1;
+    let num_absorbs = 8;
     let mut ro: Sha256RO<S, B> = Sha256RO::new(constants.clone(), num_absorbs);
     let mut ro_gadget: Sha256ROCircuit<S> = Sha256ROCircuit::new(constants, num_absorbs);
     let mut cs: SatisfyingAssignment<G> = SatisfyingAssignment::new();
     for i in 0..num_absorbs {
       let num = S::random(&mut csprng);
+      println!("num: {:?}", num);
       ro.absorb(num);
       let num_gadget =
         AllocatedNum::alloc(cs.namespace(|| format!("data {}", i)), || Ok(num)).unwrap();
@@ -242,6 +247,9 @@ mod tests {
       ro_gadget.absorb(num_gadget);
     }
     let num = ro.squeeze(NUM_CHALLENGE_BITS);
+    println!("num challenge bits: {}", NUM_CHALLENGE_BITS);
+    println!("sha256 squeeze repr: {:?}", hex::encode(num.to_repr().clone()));
+    println!("sha256 squeeze field: {:?}", num);
     let num2_bits = ro_gadget.squeeze(&mut cs, NUM_CHALLENGE_BITS).unwrap();
     let num2 = le_bits_to_num(&mut cs, num2_bits).unwrap();
     assert_eq!(num.to_repr(), num2.get_value().unwrap().to_repr());

@@ -389,7 +389,7 @@ mod tests {
   use crate::constants::{BN_LIMB_WIDTH, BN_N_LIMBS};
   use crate::{
     bellperson::r1cs::{NovaShape, NovaWitness},
-    poseidon::PoseidonConstantsCircuit,
+    sha::Sha256ConstantsCircuit,
     traits::{circuit::TrivialTestCircuit, ROConstantsTrait},
   };
 
@@ -398,8 +398,8 @@ mod tests {
     // In the following we use 1 to refer to the primary, and 2 to refer to the secondary circuit
     let params1 = NovaAugmentedCircuitParams::new(BN_LIMB_WIDTH, BN_N_LIMBS, true);
     let params2 = NovaAugmentedCircuitParams::new(BN_LIMB_WIDTH, BN_N_LIMBS, false);
-    let ro_consts1: ROConstantsCircuit<G2> = PoseidonConstantsCircuit::new();
-    let ro_consts2: ROConstantsCircuit<G1> = PoseidonConstantsCircuit::new();
+    let ro_consts1: ROConstantsCircuit<G2> = Sha256ConstantsCircuit::new();
+    let ro_consts2: ROConstantsCircuit<G1> = Sha256ConstantsCircuit::new();
 
     // Initialize the shape and gens for the primary
     let circuit1: NovaAugmentedCircuit<G2, TrivialTestCircuit<<G2 as Group>::Base>> =

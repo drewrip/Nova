@@ -10,6 +10,7 @@ mod commitments;
 mod constants;
 mod nifs;
 mod poseidon;
+mod sha;
 mod r1cs;
 
 // public modules
